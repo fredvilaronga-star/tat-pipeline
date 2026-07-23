@@ -1,0 +1,40 @@
+name: Atualizar dashboard (diário)
+
+on:
+  schedule:
+    - cron: "0 9 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Gerar index.html a partir do Notion
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          CONTAS_DS: ${{ secrets.CONTAS_DS }}
+          INTERACOES_DS: ${{ secrets.INTERACOES_DS }}
+        run: python generate_dashboard.py
+
+      - name: Commit e push se houver mudança
+        run: |
+          git config user.name "tat-dashboard-bot"
+          git config user.email "actions@github.com"
+          git add index.html
+          if git diff --staged --quiet; then
+            echo "Sem mudancas hoje."
+          else
+            git commit -m "Atualiza dashboard"
+            git push
+          fi
