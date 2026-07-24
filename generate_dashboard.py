@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 """
 TAT WaterLine — Gerador do dashboard PÚBLICO (board Kanban clicável, identidade TAT).
-
+ 
 Lê Contas + Interações do Notion (API oficial) e gera um index.html com o funil
 completo: cards das companhias por estágio, clicáveis, com a TIMELINE completa das
 interações (datas, tipo, com quem falamos). Identidade visual TAT WaterLine
 (navy + dourado). Mostra nomes de conta, estágios e histórico; NÃO expõe valores (US$).
-
+ 
 Env (GitHub Secrets): NOTION_TOKEN, CONTAS_DS, INTERACOES_DS
 """
 import os, sys, json, datetime, urllib.request
-
+ 
 NOTION_TOKEN  = os.environ.get("NOTION_TOKEN", "")
 CONTAS_DS     = os.environ.get("CONTAS_DS", "77949769-ec49-45d5-95fa-111f6f9d64a1")
 INTERACOES_DS = os.environ.get("INTERACOES_DS", "54d6bc50-22b3-4c9a-9eb9-6a492224bbf8")
@@ -18,7 +18,7 @@ CONTATOS_DS = os.environ.get("CONTATOS_DS", "af10b604-ea2b-4444-8348-40559259a7e
 EVENTOS_DS  = os.environ.get("EVENTOS_DS", "7b0f80d1-2075-4e3c-adeb-f7e28c2c2603")
 NOTION_VERSION = "2025-09-03"
 API = "https://api.notion.com/v1"
-
+ 
 STAGE_ORDER = ["Alvo","Contato","Reunião","Diagnóstico","Comitê","Mandato","Implantação"]
 STAGE_COLOR = {"Alvo":"#7c8ba0","Contato":"#6f92b8","Reunião":"#3fb6a8","Diagnóstico":"#9b7fe0",
                "Comitê":"#c9a24a","Mandato":"#3fb37f","Implantação":"#2ec38a"}
@@ -26,10 +26,16 @@ QUAD_COLOR = {"Executar agora":"#3fb37f","Converter":"#6f92b8","Construir acesso
               "Cultivar":"#c9a24a","Observar":"#7c8ba0"}
 TYPE_COLOR = {"Email":"#6f92b8","WhatsApp":"#3fb37f","Reunião":"#3fb6a8","Diagnóstico":"#9b7fe0",
               "One-pager":"#c9a24a","Nota":"#7c8ba0","Ligação":"#6f92b8"}
+# Mapa nome->bandeira. O front (flagOf) também aceita país que já venha com o emoji
+# embutido (ex.: "🇺🇸 EUA"), então funciona com ou sem emoji no valor do Notion.
 FLAG = {"Brasil":"🇧🇷","EAU":"🇦🇪","Panamá":"🇵🇦","EUA":"🇺🇸","Canadá":"🇨🇦","Catar":"🇶🇦",
         "Chile":"🇨🇱","Índia":"🇮🇳","Irlanda":"🇮🇪","Coreia do Sul":"🇰🇷","Turquia":"🇹🇷",
-        "Japão":"🇯🇵","Etiópia":"🇪🇹","Angola":"🇦🇴","Portugal":"🇵🇹"}
-
+        "Japão":"🇯🇵","Etiópia":"🇪🇹","Angola":"🇦🇴","Portugal":"🇵🇹","Islândia":"🇮🇸",
+        "Israel":"🇮🇱","México":"🇲🇽","Espanha":"🇪🇸","Argentina":"🇦🇷","Quênia":"🇰🇪",
+        "Marrocos":"🇲🇦","Egito":"🇪🇬","Omã":"🇴🇲","Jordânia":"🇯🇴","Polônia":"🇵🇱",
+        "Fiji":"🇫🇯","Nova Zelândia":"🇳🇿","Taiwan":"🇹🇼","China":"🇨🇳","Bangladesh":"🇧🇩",
+        "Colômbia":"🇨🇴","Inglaterra":"🇬🇧"}
+ 
 def _req(url, payload):
     data = json.dumps(payload).encode()
     r = urllib.request.Request(url, data=data, method="POST", headers={
@@ -37,7 +43,7 @@ def _req(url, payload):
         "Content-Type": "application/json"})
     with urllib.request.urlopen(r, timeout=60) as resp:
         return json.loads(resp.read().decode())
-
+ 
 def query_all(ds_id):
     out, cursor = [], None
     while True:
@@ -48,7 +54,7 @@ def query_all(ds_id):
         if not j.get("has_more"): break
         cursor = j.get("next_cursor")
     return out
-
+ 
 def P(pg, n): return pg.get("properties", {}).get(n, {}) or {}
 def sel(pg, n):
     s = P(pg, n).get("select");  return s.get("name") if s else None
@@ -65,14 +71,14 @@ def to_date(s):
     if not s: return None
     try: return datetime.date.fromisoformat(s[:10])
     except Exception: return None
-
+ 
 def main():
     if not NOTION_TOKEN:
         print("ERRO: defina NOTION_TOKEN", file=sys.stderr); sys.exit(1)
     today = datetime.date.today()
     contas = query_all(CONTAS_DS)
     inter  = query_all(INTERACOES_DS)
-
+ 
     tmap, imap = {}, {}
     for it in inter:
         ds = dstart(it, "Data"); d = to_date(ds)
@@ -85,7 +91,7 @@ def main():
             imap.setdefault(aid, []).append(ev)
     for aid in imap:
         imap[aid].sort(key=lambda x: (x["d"] or ""), reverse=True)
-
+ 
     accts = []
     for p in contas:
         t = tmap.get(p.get("id"), {"n":0,"last":None})
@@ -100,7 +106,7 @@ def main():
             "toques": t["n"], "ult": t["last"].isoformat() if t["last"] else None,
             "eventos": imap.get(p.get("id"), []),
         })
-
+ 
     total = len(accts)
     em_pipeline = sum(1 for a in accts if a["estagio"] != "Alvo")
     diag_plus = sum(1 for a in accts if a["estagio"] in ("Diagnóstico","Comitê","Mandato","Implantação"))
@@ -109,7 +115,7 @@ def main():
         d = to_date(a["prazo"]);  return (d - today).days if d else None
     venc  = sum(1 for a in accts if pdelta(a) is not None and 0 <= pdelta(a) <= 7)
     venc0 = sum(1 for a in accts if pdelta(a) is not None and pdelta(a) < 0 and a["estagio"] != "Alvo")
-
+ 
     def _load(fn):
         try: return json.load(open(fn, encoding="utf-8"))
         except Exception: return []
@@ -149,10 +155,10 @@ def main():
     with open("index.html","w",encoding="utf-8") as f:
         f.write(html)
     print(f"OK · {total} contas · {len(inter)} interações · {venc} prazos ≤7d · {venc0} vencidos")
-
+ 
 def _e(s):
     return (str(s) if s is not None else "").replace("&","&amp;").replace("<","&lt;").replace(">","&gt;")
-
+ 
 def render(today, accts, total, em_pipeline, diag_plus, fleet, venc, venc0, n_inter, contatos=None, eventos=None):
     d_str = today.strftime("%d/%m/%Y")
     for i, a in enumerate(accts): a["_i"] = i
@@ -184,7 +190,7 @@ def render(today, accts, total, em_pipeline, diag_plus, fleet, venc, venc0, n_in
                 f'<td>{spon}{champ}</td>'
                 f'<td class="sm">{_e((c.get("canal") or c.get("conector") or "")[:60])}</td></tr>')
     contatos_html = f'<table class="ctab"><thead><tr><th>Nome</th><th>Empresa</th><th>Cargo</th><th>Área</th><th>Infl/Acess</th><th>Flags</th><th>Canal de acesso</th></tr></thead><tbody>{crows}</tbody></table>'
-
+ 
     def _evd(s):
         if not s: return "—"
         p=s.split("-"); return f"{p[2]}/{p[1]}" if len(p)==3 else s
@@ -223,7 +229,7 @@ def render(today, accts, total, em_pipeline, diag_plus, fleet, venc, venc0, n_in
         ecards += '<div class="ev-div">Já realizados</div>'
         ecards += "".join(_ecard(e, past=True) for e in passados)
     eventos_html = f'<div class="egrid">{ecards}</div>' if ecards else '<div class="empty">Sem eventos.</div>'
-
+ 
     return f'''<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>TAT WaterLine · Pipeline</title>
@@ -374,11 +380,13 @@ const FLAG={json.dumps(FLAG, ensure_ascii=False)};
 const TODAY="{today.isoformat()}";
 function fmt(d){{if(!d)return null;const p=d.split('-');return p[2]+'/'+p[1]+'/'+p[0].slice(2);}}
 function esc(s){{return String(s==null?'':s).replace(/[&<>]/g,m=>({{'&':'&amp;','<':'&lt;','>':'&gt;'}}[m]));}}
+function flagOf(p){{if(!p)return '🏳️';const s=String(p);const m=s.match(/^\\p{{RI}}\\p{{RI}}/u);if(m)return m[0];return FLAG[s]||FLAG[s.replace(/^\\S+\\s+/,'')]||'🏳️';}}
+function paisNome(p){{return String(p==null?'':p).replace(/^\\p{{RI}}\\p{{RI}}\\s*/u,'');}}
 function delta(d){{if(!d)return null;return Math.round((new Date(d)-new Date(TODAY))/864e5);}}
 function paint(){{
   DATA.forEach(a=>{{
     const el=document.getElementById('c'+a._i); if(!el)return;
-    const qc=QC[a.quad]||'#7c8ba0', flag=FLAG[a.pais]||'🏳️';
+    const qc=QC[a.quad]||'#7c8ba0', flag=flagOf(a.pais);
     let chips='';
     if(a.quad)chips+='<span class="chip" style="border-color:'+qc+'55;color:'+qc+';background:'+qc+'14">'+esc(a.quad)+'</span>';
     if(a.score!=null)chips+='<span class="chip mut">Score '+a.score+'</span>';
@@ -407,13 +415,13 @@ function tl(a){{
   return '<div class="sec">Timeline · '+ev.length+' evento(s)</div><div class="tlw">'+rows+'</div>';
 }}
 function openD(i){{
-  const a=DATA[i]; const sc=SC[a.estagio]||'#7c8ba0', qc=QC[a.quad]||'#7c8ba0', flag=FLAG[a.pais]||'🏳️';
+  const a=DATA[i]; const sc=SC[a.estagio]||'#7c8ba0', qc=QC[a.quad]||'#7c8ba0', flag=flagOf(a.pais);
   let pz='—';
   if(a.prazo){{const dd=delta(a.prazo); pz=fmt(a.prazo)+(dd<0?' (vencido)':dd<=7?' ('+dd+'d)':'');}}
   document.getElementById('drw').innerHTML=
    '<div class="drw-h"><button class="drw-x" onclick="closeD()">✕</button>'
    +'<div class="drw-c">'+flag+' '+esc(a.nome)+'</div>'
-   +'<div class="drw-s">'+esc(a.pais||'')+(a.fleet?' · '+Math.round(a.fleet)+' Boeing':'')+'</div>'
+   +'<div class="drw-s">'+esc(paisNome(a.pais))+(a.fleet?' · '+Math.round(a.fleet)+' Boeing':'')+'</div>'
    +'<div style="margin-top:10px"><span class="chip" style="border-color:'+sc+';color:'+sc+';background:'+sc+'1c">'+a.estagio+'</span>'
    +(a.quad?' <span class="chip" style="border-color:'+qc+'55;color:'+qc+';background:'+qc+'14">'+esc(a.quad)+'</span>':'')+'</div></div>'
    +'<div class="drw-b"><div class="g2">'
@@ -438,6 +446,7 @@ function tab(p){{
 paint();
 </script>
 </body></html>'''
-
+ 
 if __name__ == "__main__":
     main()
+ 
