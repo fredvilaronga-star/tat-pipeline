@@ -144,15 +144,17 @@ const DATA=[{"nome": "Biman Bangladesh", "pais": "🇧🇩 Bangladesh", "estagio
 const SC={"Alvo": "#7c8ba0", "Contato": "#6f92b8", "Reunião": "#3fb6a8", "Diagnóstico": "#9b7fe0", "Comitê": "#c9a24a", "Mandato": "#3fb37f", "Implantação": "#2ec38a"};
 const QC={"Executar agora": "#3fb37f", "Converter": "#6f92b8", "Construir acesso": "#9b7fe0", "Cultivar": "#c9a24a", "Observar": "#7c8ba0"};
 const TY={"Email": "#6f92b8", "WhatsApp": "#3fb37f", "Reunião": "#3fb6a8", "Diagnóstico": "#9b7fe0", "One-pager": "#c9a24a", "Nota": "#7c8ba0", "Ligação": "#6f92b8"};
-const FLAG={"Brasil": "🇧🇷", "EAU": "🇦🇪", "Panamá": "🇵🇦", "EUA": "🇺🇸", "Canadá": "🇨🇦", "Catar": "🇶🇦", "Chile": "🇨🇱", "Índia": "🇮🇳", "Irlanda": "🇮🇪", "Coreia do Sul": "🇰🇷", "Turquia": "🇹🇷", "Japão": "🇯🇵", "Etiópia": "🇪🇹", "Angola": "🇦🇴", "Portugal": "🇵🇹"};
+const FLAG={"Brasil": "🇧🇷", "EAU": "🇦🇪", "Panamá": "🇵🇦", "EUA": "🇺🇸", "Canadá": "🇨🇦", "Catar": "🇶🇦", "Chile": "🇨🇱", "Índia": "🇮🇳", "Irlanda": "🇮🇪", "Coreia do Sul": "🇰🇷", "Turquia": "🇹🇷", "Japão": "🇯🇵", "Etiópia": "🇪🇹", "Angola": "🇦🇴", "Portugal": "🇵🇹", "Islândia": "🇮🇸", "Israel": "🇮🇱", "México": "🇲🇽", "Espanha": "🇪🇸", "Argentina": "🇦🇷", "Quênia": "🇰🇪", "Marrocos": "🇲🇦", "Egito": "🇪🇬", "Omã": "🇴🇲", "Jordânia": "🇯🇴", "Polônia": "🇵🇱", "Fiji": "🇫🇯", "Nova Zelândia": "🇳🇿", "Taiwan": "🇹🇼", "China": "🇨🇳", "Bangladesh": "🇧🇩", "Colômbia": "🇨🇴", "Inglaterra": "🇬🇧"};
 const TODAY="2026-07-24";
 function fmt(d){if(!d)return null;const p=d.split('-');return p[2]+'/'+p[1]+'/'+p[0].slice(2);}
 function esc(s){return String(s==null?'':s).replace(/[&<>]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]));}
+function flagOf(p){if(!p)return '🏳️';const s=String(p);const m=s.match(/^\p{RI}\p{RI}/u);if(m)return m[0];return FLAG[s]||FLAG[s.replace(/^\S+\s+/,'')]||'🏳️';}
+function paisNome(p){return String(p==null?'':p).replace(/^\p{RI}\p{RI}\s*/u,'');}
 function delta(d){if(!d)return null;return Math.round((new Date(d)-new Date(TODAY))/864e5);}
 function paint(){
   DATA.forEach(a=>{
     const el=document.getElementById('c'+a._i); if(!el)return;
-    const qc=QC[a.quad]||'#7c8ba0', flag=FLAG[a.pais]||'🏳️';
+    const qc=QC[a.quad]||'#7c8ba0', flag=flagOf(a.pais);
     let chips='';
     if(a.quad)chips+='<span class="chip" style="border-color:'+qc+'55;color:'+qc+';background:'+qc+'14">'+esc(a.quad)+'</span>';
     if(a.score!=null)chips+='<span class="chip mut">Score '+a.score+'</span>';
@@ -181,13 +183,13 @@ function tl(a){
   return '<div class="sec">Timeline · '+ev.length+' evento(s)</div><div class="tlw">'+rows+'</div>';
 }
 function openD(i){
-  const a=DATA[i]; const sc=SC[a.estagio]||'#7c8ba0', qc=QC[a.quad]||'#7c8ba0', flag=FLAG[a.pais]||'🏳️';
+  const a=DATA[i]; const sc=SC[a.estagio]||'#7c8ba0', qc=QC[a.quad]||'#7c8ba0', flag=flagOf(a.pais);
   let pz='—';
   if(a.prazo){const dd=delta(a.prazo); pz=fmt(a.prazo)+(dd<0?' (vencido)':dd<=7?' ('+dd+'d)':'');}
   document.getElementById('drw').innerHTML=
    '<div class="drw-h"><button class="drw-x" onclick="closeD()">✕</button>'
    +'<div class="drw-c">'+flag+' '+esc(a.nome)+'</div>'
-   +'<div class="drw-s">'+esc(a.pais||'')+(a.fleet?' · '+Math.round(a.fleet)+' Boeing':'')+'</div>'
+   +'<div class="drw-s">'+esc(paisNome(a.pais))+(a.fleet?' · '+Math.round(a.fleet)+' Boeing':'')+'</div>'
    +'<div style="margin-top:10px"><span class="chip" style="border-color:'+sc+';color:'+sc+';background:'+sc+'1c">'+a.estagio+'</span>'
    +(a.quad?' <span class="chip" style="border-color:'+qc+'55;color:'+qc+';background:'+qc+'14">'+esc(a.quad)+'</span>':'')+'</div></div>'
    +'<div class="drw-b"><div class="g2">'
