@@ -118,13 +118,13 @@ body{background:var(--navy);color:var(--white);font-family:var(--fn);font-size:1
     <svg class="swoosh" width="230" height="13" viewBox="0 0 230 13"><defs><linearGradient id="sw" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#6f92b8"/><stop offset="1" stop-color="#c9a24a"/></linearGradient></defs><path d="M2 9 C 70 2, 140 3, 195 6 L 228 1" fill="none" stroke="url(#sw)" stroke-width="2.5" stroke-linecap="round"/></svg>
     <div class="b-tag">Smart Water. <span class="g">Real Results.</span></div>
   </div>
-  <div class="hr"><div class="u">Atualizado 24/07/2026</div><div class="s">Pipeline comercial · fonte Notion · diário</div></div>
+  <div class="hr"><div class="u">Atualizado 25/07/2026</div><div class="s">Pipeline comercial · fonte Notion · diário</div></div>
 </div>
 <div class="kpis">
   <div class="kpi"><div class="v">44</div><div class="l">Contas</div></div>
   <div class="kpi grn"><div class="v">10</div><div class="l">Em pipeline</div></div>
   <div class="kpi g"><div class="v">2</div><div class="l">Diagnóstico+</div></div>
-  <div class="kpi g"><div class="v">0</div><div class="l">Prazos ≤ 7 dias</div></div>
+  <div class="kpi g"><div class="v">1</div><div class="l">Prazos ≤ 7 dias</div></div>
   <div class="kpi rd"><div class="v">0</div><div class="l">Prazos vencidos</div></div>
   <div class="kpi"><div class="v">6,431</div><div class="l">Frota Boeing</div></div>
 </div>
@@ -145,7 +145,7 @@ const SC={"Alvo": "#7c8ba0", "Contato": "#6f92b8", "Reunião": "#3fb6a8", "Diagn
 const QC={"Executar agora": "#3fb37f", "Converter": "#6f92b8", "Construir acesso": "#9b7fe0", "Cultivar": "#c9a24a", "Observar": "#7c8ba0"};
 const TY={"Email": "#6f92b8", "WhatsApp": "#3fb37f", "Reunião": "#3fb6a8", "Diagnóstico": "#9b7fe0", "One-pager": "#c9a24a", "Nota": "#7c8ba0", "Ligação": "#6f92b8"};
 const FLAG={"Brasil": "🇧🇷", "EAU": "🇦🇪", "Panamá": "🇵🇦", "EUA": "🇺🇸", "Canadá": "🇨🇦", "Catar": "🇶🇦", "Chile": "🇨🇱", "Índia": "🇮🇳", "Irlanda": "🇮🇪", "Coreia do Sul": "🇰🇷", "Turquia": "🇹🇷", "Japão": "🇯🇵", "Etiópia": "🇪🇹", "Angola": "🇦🇴", "Portugal": "🇵🇹", "Islândia": "🇮🇸", "Israel": "🇮🇱", "México": "🇲🇽", "Espanha": "🇪🇸", "Argentina": "🇦🇷", "Quênia": "🇰🇪", "Marrocos": "🇲🇦", "Egito": "🇪🇬", "Omã": "🇴🇲", "Jordânia": "🇯🇴", "Polônia": "🇵🇱", "Fiji": "🇫🇯", "Nova Zelândia": "🇳🇿", "Taiwan": "🇹🇼", "China": "🇨🇳", "Bangladesh": "🇧🇩", "Colômbia": "🇨🇴", "Inglaterra": "🇬🇧"};
-const TODAY="2026-07-24";
+const TODAY="2026-07-25";
 function fmt(d){if(!d)return null;const p=d.split('-');return p[2]+'/'+p[1]+'/'+p[0].slice(2);}
 function esc(s){return String(s==null?'':s).replace(/[&<>]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]));}
 function flagOf(p){if(!p)return '🏳️';const s=String(p);const m=s.match(/^\p{RI}\p{RI}/u);if(m)return m[0];return FLAG[s]||FLAG[s.replace(/^\S+\s+/,'')]||'🏳️';}
