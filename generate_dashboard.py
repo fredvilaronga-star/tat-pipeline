@@ -99,6 +99,7 @@ def main():
         accts.append({
             "nome": title(p,"Conta"), "pais": sel(p,"País"),
             "estagio": sel(p,"Estágio") or "01 Prospecção", "quad": sel(p,"Quadrante"),
+            "status": sel(p,"Status") or "Ativo",
             "score": num(p,"Opportunity Score"), "fleet": num(p,"Frota Boeing"),
             "prop": num(p,"Propensão"), "prazo": prazo.isoformat() if prazo else None,
             "sponsor": rtext(p,"Sponsor-alvo"), "caminho": rtext(p,"Caminho de acesso"),
@@ -108,13 +109,13 @@ def main():
         })
  
     total = len(accts)
-    em_pipeline = sum(1 for a in accts if a["estagio"] != "01 Prospecção")
-    diag_plus = sum(1 for a in accts if a["estagio"] in ("03 Comitê","04 Contrato PoC","05 Aprovação PoC","06 Implantação"))
+    em_pipeline = sum(1 for a in accts if a["estagio"] != "01 Prospecção" and a["status"] == "Ativo")
+    diag_plus = sum(1 for a in accts if a["estagio"] in ("03 Comitê","04 Contrato PoC","05 Aprovação PoC","06 Implantação") and a["status"] == "Ativo")
     fleet = sum(int(a["fleet"] or 0) for a in accts)
     def pdelta(a):
         d = to_date(a["prazo"]);  return (d - today).days if d else None
     venc  = sum(1 for a in accts if pdelta(a) is not None and 0 <= pdelta(a) <= 7)
-    venc0 = sum(1 for a in accts if pdelta(a) is not None and pdelta(a) < 0 and a["estagio"] != "01 Prospecção")
+    venc0 = sum(1 for a in accts if pdelta(a) is not None and pdelta(a) < 0 and a["estagio"] != "01 Prospecção" and a["status"] == "Ativo")
  
     def _load(fn):
         try: return json.load(open(fn, encoding="utf-8"))
@@ -168,7 +169,7 @@ def render(today, accts, total, em_pipeline, diag_plus, fleet, venc, venc0, n_in
         items = [a for a in accts if a["estagio"] == s]
         items.sort(key=lambda a: (a["score"] is None, -(a["score"] or 0)))
         body = "".join(
-            f'<div class="card" style="border-left-color:{STAGE_COLOR[s]}" onclick="openD({a["_i"]})" id="c{a["_i"]}"></div>'
+            f'<div class="card{"" if a["status"]=="Ativo" else " susp"}" style="border-left-color:{STAGE_COLOR[s]}" onclick="openD({a["_i"]})" id="c{a["_i"]}"></div>'
             for a in items) or '<div class="empty">—</div>'
         cols += f'<div class="col"><div class="col-h"><span class="dot" style="background:{STAGE_COLOR[s]}"></span>{s}<span class="col-n">{len(items)}</span></div>{body}</div>'
     contatos = contatos or []; eventos = eventos or []
@@ -267,6 +268,8 @@ body{{background:var(--navy);color:var(--white);font-family:var(--fn);font-size:
 .col-h{{display:flex;align-items:center;gap:7px;font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--mut);margin-bottom:11px;padding:0 2px}}
 .dot{{width:8px;height:8px;border-radius:50%}}
 .col-n{{margin-left:auto;background:var(--navy2);border:1px solid var(--line);border-radius:20px;padding:1px 8px;font-size:10px;color:var(--mut)}}
+.card.susp{{opacity:.62;filter:grayscale(.45)}}
+.card.susp::after{{content:"SUSPENSO";display:block;margin-top:7px;font-size:8.5px;font-weight:800;letter-spacing:.8px;color:#e2687e;border:1px solid #e2687e;border-radius:20px;padding:1px 7px;width:fit-content}}
 .card{{background:var(--navy2);border:1px solid var(--line);border-left:3px solid var(--steel);border-radius:10px;padding:11px;margin-bottom:9px;cursor:pointer;transition:.15s}}
 .card:hover{{border-color:var(--gold);box-shadow:0 4px 16px rgba(0,0,0,.35);transform:translateY(-1px)}}
 .c-top{{display:flex;justify-content:space-between;align-items:flex-start;gap:6px}}
@@ -422,7 +425,7 @@ function openD(i){{
    '<div class="drw-h"><button class="drw-x" onclick="closeD()">✕</button>'
    +'<div class="drw-c">'+flag+' '+esc(a.nome)+'</div>'
    +'<div class="drw-s">'+esc(paisNome(a.pais))+(a.fleet?' · '+Math.round(a.fleet)+' Boeing':'')+'</div>'
-   +'<div style="margin-top:10px"><span class="chip" style="border-color:'+sc+';color:'+sc+';background:'+sc+'1c">'+a.estagio+'</span>'
+   +'<div style="margin-top:10px"><span class="chip" style="border-color:'+sc+';color:'+sc+';background:'+sc+'1c">'+a.estagio+'</span>'+((a.status&&a.status!=='Ativo')?'<span class="chip" style="border-color:#e2687e;color:#e2687e;background:#e2687e1c">'+a.status.toUpperCase()+'</span>':'')
    +(a.quad?' <span class="chip" style="border-color:'+qc+'55;color:'+qc+';background:'+qc+'14">'+esc(a.quad)+'</span>':'')+'</div></div>'
    +'<div class="drw-b"><div class="g2">'
    +'<div class="f"><div class="l">Opportunity Score</div><div class="v">'+(a.score!=null?a.score:'—')+'</div></div>'
