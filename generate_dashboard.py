@@ -19,9 +19,9 @@ EVENTOS_DS  = os.environ.get("EVENTOS_DS", "7b0f80d1-2075-4e3c-adeb-f7e28c2c2603
 NOTION_VERSION = "2025-09-03"
 API = "https://api.notion.com/v1"
  
-STAGE_ORDER = ["Alvo","Contato","Reunião","Diagnóstico","Comitê","Mandato","Implantação"]
-STAGE_COLOR = {"Alvo":"#7c8ba0","Contato":"#6f92b8","Reunião":"#3fb6a8","Diagnóstico":"#9b7fe0",
-               "Comitê":"#c9a24a","Mandato":"#3fb37f","Implantação":"#2ec38a"}
+STAGE_ORDER = ["01 Prospecção","02 Engajamento","03 Comitê","04 Contrato PoC","05 Aprovação PoC","06 Implantação"]
+STAGE_COLOR = {"01 Prospecção":"#7c8ba0","02 Engajamento":"#3fb6a8","03 Comitê":"#c9a24a",
+               "04 Contrato PoC":"#e08a3c","05 Aprovação PoC":"#9b7fe0","06 Implantação":"#2ec38a"}
 QUAD_COLOR = {"Executar agora":"#3fb37f","Converter":"#6f92b8","Construir acesso":"#9b7fe0",
               "Cultivar":"#c9a24a","Observar":"#7c8ba0"}
 TYPE_COLOR = {"Email":"#6f92b8","WhatsApp":"#3fb37f","Reunião":"#3fb6a8","Diagnóstico":"#9b7fe0",
@@ -98,7 +98,7 @@ def main():
         prazo = to_date(dstart(p, "Prazo"))
         accts.append({
             "nome": title(p,"Conta"), "pais": sel(p,"País"),
-            "estagio": sel(p,"Estágio") or "Alvo", "quad": sel(p,"Quadrante"),
+            "estagio": sel(p,"Estágio") or "01 Prospecção", "quad": sel(p,"Quadrante"),
             "score": num(p,"Opportunity Score"), "fleet": num(p,"Frota Boeing"),
             "prop": num(p,"Propensão"), "prazo": prazo.isoformat() if prazo else None,
             "sponsor": rtext(p,"Sponsor-alvo"), "caminho": rtext(p,"Caminho de acesso"),
@@ -108,13 +108,13 @@ def main():
         })
  
     total = len(accts)
-    em_pipeline = sum(1 for a in accts if a["estagio"] != "Alvo")
-    diag_plus = sum(1 for a in accts if a["estagio"] in ("Diagnóstico","Comitê","Mandato","Implantação"))
+    em_pipeline = sum(1 for a in accts if a["estagio"] != "01 Prospecção")
+    diag_plus = sum(1 for a in accts if a["estagio"] in ("03 Comitê","04 Contrato PoC","05 Aprovação PoC","06 Implantação"))
     fleet = sum(int(a["fleet"] or 0) for a in accts)
     def pdelta(a):
         d = to_date(a["prazo"]);  return (d - today).days if d else None
     venc  = sum(1 for a in accts if pdelta(a) is not None and 0 <= pdelta(a) <= 7)
-    venc0 = sum(1 for a in accts if pdelta(a) is not None and pdelta(a) < 0 and a["estagio"] != "Alvo")
+    venc0 = sum(1 for a in accts if pdelta(a) is not None and pdelta(a) < 0 and a["estagio"] != "01 Prospecção")
  
     def _load(fn):
         try: return json.load(open(fn, encoding="utf-8"))
@@ -355,7 +355,7 @@ body{{background:var(--navy);color:var(--white);font-family:var(--fn);font-size:
 <div class="kpis">
   <div class="kpi"><div class="v">{total}</div><div class="l">Contas</div></div>
   <div class="kpi grn"><div class="v">{em_pipeline}</div><div class="l">Em pipeline</div></div>
-  <div class="kpi g"><div class="v">{diag_plus}</div><div class="l">Diagnóstico+</div></div>
+  <div class="kpi g"><div class="v">{diag_plus}</div><div class="l">Comitê+</div></div>
   <div class="kpi g"><div class="v">{venc}</div><div class="l">Prazos ≤ 7 dias</div></div>
   <div class="kpi rd"><div class="v">{venc0}</div><div class="l">Prazos vencidos</div></div>
   <div class="kpi"><div class="v">{fleet:,}</div><div class="l">Frota Boeing</div></div>
@@ -396,7 +396,7 @@ function paint(){{
     if(a.ult)meta.push('últ. '+fmt(a.ult));
     let pz='';
     if(a.prazo){{const dd=delta(a.prazo);
-      if(dd<0&&a.estagio!=='Alvo')pz='<span class="pz pz-r">Vencido · '+fmt(a.prazo)+'</span>';
+      if(dd<0&&a.estagio!=='01 Prospecção')pz='<span class="pz pz-r">Vencido · '+fmt(a.prazo)+'</span>';
       else if(dd<=7)pz='<span class="pz pz-a">Prazo '+fmt(a.prazo)+' · '+dd+'d</span>';
       else pz='<span class="pz">Prazo '+fmt(a.prazo)+'</span>';}}
     el.innerHTML='<div class="c-top"><div class="c-name">'+esc(a.nome)+'</div><div class="c-flag">'+flag+'</div></div>'
